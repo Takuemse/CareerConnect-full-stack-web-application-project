@@ -33,9 +33,6 @@ const register = async(req, res) =>{
         user
     })
 
-
-    
-
         
     } catch (err) {
         console.error(err)
