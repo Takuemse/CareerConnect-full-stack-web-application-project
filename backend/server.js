@@ -9,6 +9,7 @@ const authRoutes = require('../backend/routes/authRoutes')
 const companyRoutes = require("../backend/routes/companyRoutes");
 const jobRoutes = require('../backend/routes/jobRoutes')
 const applicationRoutes = require("../backend/routes/applicationRoutes");
+const profileRoutes = require("./routes/profileRoutes");
 
 
 app.use(express.json());
@@ -18,6 +19,7 @@ app.use('/api/auth/', authRoutes)
 app.use('/api/companies',companyRoutes)
 app.use('/api/jobs',jobRoutes)
 app.use("/api/applications",applicationRoutes)
+app.use("/api/profiles", profileRoutes);
 
 
 app.get('/', (req, res) =>{
