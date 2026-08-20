@@ -24,14 +24,114 @@ const createJob = async (
     return result.rows[0];
 };
 
-const getAllJobs = async () => {
-    const result = await pool.query('SELECT jobs.*, companies.name AS company_name FROM jobs JOIN companies ON jobs.company_id = companies.id ORDER BY jobs.created_at DESC');
+const getAllJobs = async (filters) => {
+
+    let query = `
+        SELECT
+            jobs.*,
+            companies.name AS company_name
+        FROM jobs
+        JOIN companies
+        ON jobs.company_id = companies.id
+    `;
+
+    const conditions = [];
+    const values = [];
+
+    let parameterIndex = 1;
+
+    if (filters.keyword) {
+        conditions.push(`
+            (
+                jobs.title ILIKE $${parameterIndex}
+                OR jobs.description ILIKE $${parameterIndex}
+            )
+        `);
+
+        values.push(`%${filters.keyword}%`);
+        parameterIndex++;
+    }
+
+    if (filters.location) {
+        conditions.push(
+            `jobs.location ILIKE $${parameterIndex}`
+        );
+
+        values.push(`%${filters.location}%`);
+        parameterIndex++;
+    }
+
+    if (filters.jobType) {
+        conditions.push(
+            `jobs.job_type = $${parameterIndex}`
+        );
+
+        values.push(filters.jobType);
+        parameterIndex++;
+    }
+
+    // Fixed: Ensure minSalary is a valid number before adding condition
+    if (filters.minSalary && !isNaN(filters.minSalary)) {
+        conditions.push(
+            `jobs.salary_max >= $${parameterIndex}`
+        );
+
+        values.push(Number(filters.minSalary));
+        parameterIndex++;
+    }
+
+    // Fixed: Ensure maxSalary is a valid number before adding condition
+    if (filters.maxSalary && !isNaN(filters.maxSalary)) {
+        conditions.push(
+            `jobs.salary_min <= $${parameterIndex}`
+        );
+
+        values.push(Number(filters.maxSalary));
+        parameterIndex++;
+    }
+
+    if (filters.company) {
+        conditions.push(
+            `companies.name ILIKE $${parameterIndex}`
+        );
+
+        values.push(`%${filters.company}%`);
+        parameterIndex++;
+    }
+
+    if (conditions.length > 0) {
+        query += `
+            WHERE ${conditions.join(" AND ")}
+        `;
+    }
+
+    const limit = Math.min(
+        Number(filters.limit) || 10,
+        50
+    );
+
+    const offset =
+        Number(filters.offset) || 0;
+
+    query += `
+        ORDER BY jobs.created_at DESC
+        LIMIT $${parameterIndex}
+        OFFSET $${parameterIndex + 1}
+    `;
+
+    values.push(limit);
+    values.push(offset);
+
+    const result = await pool.query(
+        query,
+        values
+    );
 
     return result.rows;
 };
 
 const getJobById = async (id) => {
-    const result = await pool.query( 'SELECT jobs.*,  companies.name AS company_name FROM jobs JOIN companies ON jobs.company_id = companies.id WHERE jobs.id = $1',
+    const result = await pool.query('SELECT jobs.*, companies.name AS company_name FROM jobs JOIN companies ON jobs.company_id = companies.id WHERE jobs.id = $1',
         [id]
     );
 

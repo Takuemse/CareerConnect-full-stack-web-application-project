@@ -2,6 +2,7 @@ const { createJob, getAllJobs, getJobById, updateJob, deleteJob} = require("../q
 
 const { getCompanyById } = require("../queries/companyQueries");
 
+
 const create = async (req, res) => {
     try {
         const { companyId, title, description, location, salaryMin, salaryMax, jobType } = req.body;
@@ -42,16 +43,66 @@ const create = async (req, res) => {
         });
     }
 };
-
 const getAll = async (req, res) => {
     try {
-        const jobs = await getAllJobs();
 
+       const {
+    keyword,
+    location,
+    jobType,
+    minSalary,
+    maxSalary,
+    company,
+    limit,
+    offset
+} = req.query;
+
+       const jobs = await getAllJobs({
+    keyword,
+    location,
+    jobType,
+    minSalary,
+    maxSalary,
+    company,
+    limit,
+    offset
+});
+if (
+    minSalary !== undefined &&
+    isNaN(Number(minSalary))
+) {
+    return res.status(400).json({
+        message: "minSalary must be a number"
+    });
+}
+
+if (
+    maxSalary !== undefined &&
+    isNaN(Number(maxSalary))
+) {
+    return res.status(400).json({
+        message: "maxSalary must be a number"
+    });
+}
+if (
+    minSalary !== undefined &&
+    maxSalary !== undefined &&
+    Number(minSalary) > Number(maxSalary)
+) {
+    return res.status(400).json({
+        message:
+            "minSalary cannot be greater than maxSalary"
+    });
+}
         res.status(200).json({
+            count: jobs.length,
+               limit: Number(limit) || 10,
+               offset: Number(offset) || 0,
             jobs
         });
 
     } catch (error) {
+
         console.error(error);
 
         res.status(500).json({
