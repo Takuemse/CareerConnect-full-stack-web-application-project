@@ -1,5 +1,8 @@
 const express = require("express");
 
+const { applicationValidation } = require('../validations/applicationValidation')
+const { applicationStatusValidation } = require('../validations/applicationValidation')
+const validate = require('../middleware/validationMiddleware')
 const {
     apply,
     getMyApplications,
@@ -17,6 +20,7 @@ router.post(
     "/jobs/:jobId",
     protect,
     allowRoles("JOB_SEEKER"),
+    applicationValidation,
     apply
 );
 
@@ -41,6 +45,7 @@ router.patch(
     "/:applicationId/status",
     protect,
     allowRoles("RECRUITER"),
+    applicationStatusValidation,
     updateStatus
 );
 

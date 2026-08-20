@@ -1,4 +1,8 @@
 const express = require("express");
+const {  createJobValidation } = require("../validations/jobValidation");
+const {  jobSearchValidation, } = require("../validations/jobSearchValidation");
+
+const validate = require("../middleware/validationMiddleware");
 
 const { create, getAll, getOne, update, remove } = require("../controllers/jobController");
 
@@ -11,10 +15,12 @@ router.post(
     "/",
     protect,
     allowRoles("RECRUITER"),
+    createJobValidation,
+    validate,
     create
 );
 
-router.get("/", getAll);
+router.get("/", jobSearchValidation, validate,getAll);
 
 router.get("/:id", getOne);
 

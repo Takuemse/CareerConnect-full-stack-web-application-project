@@ -10,6 +10,10 @@ const companyRoutes = require("../backend/routes/companyRoutes");
 const jobRoutes = require('../backend/routes/jobRoutes')
 const applicationRoutes = require("../backend/routes/applicationRoutes");
 const profileRoutes = require("./routes/profileRoutes");
+const userRoutes = require('./routes/userRoutes')
+const notFound = require("./middleware/notFoundMiddleware");
+
+const errorHandler = require("./middleware/errorMiddleware");
 
 
 app.use(express.json());
@@ -17,9 +21,13 @@ app.use(cors());
 
 app.use('/api/auth/', authRoutes)
 app.use('/api/companies',companyRoutes)
+app.use('/api/users',userRoutes)
 app.use('/api/jobs',jobRoutes)
 app.use("/api/applications",applicationRoutes)
 app.use("/api/profiles", profileRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 
 app.get('/', (req, res) =>{
@@ -28,14 +36,7 @@ app.get('/', (req, res) =>{
     })
 });
 
-app.get('/test-db', async (req, res) =>{
-    const result = await pool.query("SELECT NOW()")
-    res.json({
-        message: "Database connected",
-        time: result.rows[0]
 
-    })
-})
 
 const PORT = process.env.PORT || 5000
 

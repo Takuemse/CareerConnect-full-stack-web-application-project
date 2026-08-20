@@ -1,4 +1,6 @@
 const express = require("express");
+const {   companyValidation } = require('../validations/companyValidation')
+const validate = require('../middleware/validationMiddleware')
 
 const { create, getAll, getOne, update, remove } = require("../controllers/companyController");
 
@@ -7,8 +9,7 @@ const allowRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-router.post("/", protect, allowRoles("RECRUITER"), create
-);
+router.post("/", protect, allowRoles("RECRUITER"), companyValidation, validate, create);
 
 router.get("/", getAll);
 

@@ -12,6 +12,10 @@ const protect = require("../middleware/authMiddleware");
 const allowRoles = require("../middleware/roleMiddleware");
 
 const upload = require("../middleware/uploadMiddleware");
+const { profileValidation } = require("../validations/profileValidation");
+
+const validate =
+    require("../middleware/validationMiddleware");
 
 const router = express.Router();
 
@@ -20,6 +24,8 @@ router.post(
     "/",
     protect,
     allowRoles("JOB_SEEKER"),
+    profileValidation,
+    validate,
     create
 );
 
@@ -36,6 +42,8 @@ router.put(
     "/",
     protect,
     allowRoles("JOB_SEEKER"),
+    profileValidation,
+    validate,
     update
 );
 
