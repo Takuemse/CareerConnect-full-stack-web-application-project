@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRoutes = require('../backend/routes/authRoutes')
 const companyRoutes = require("../backend/routes/companyRoutes");
 const jobRoutes = require('../backend/routes/jobRoutes')
+const applicationRoutes = require("../backend/routes/applicationRoutes");
 
 
 app.use(express.json());
@@ -15,7 +16,8 @@ app.use(cors());
 
 app.use('/api/auth/', authRoutes)
 app.use('/api/companies',companyRoutes)
-app.use('/api/jobs',jobRoutes);
+app.use('/api/jobs',jobRoutes)
+app.use("/api/applications",applicationRoutes)
 
 
 app.get('/', (req, res) =>{
