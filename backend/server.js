@@ -14,9 +14,23 @@ const profileRoutes = require("./routes/profileRoutes");
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://career-connect-full-stack-web-appli.vercel.app/",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked origin: ${origin}`));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
@@ -41,6 +55,7 @@ app.use((req, res) => {
 
 app.use((error, req, res, next) => {
   console.error(error);
+
   res.status(error.statusCode || 500).json({
     message: error.message || "Internal server error",
   });
