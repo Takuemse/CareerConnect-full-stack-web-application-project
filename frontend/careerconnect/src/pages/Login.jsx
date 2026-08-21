@@ -47,7 +47,19 @@ function Login() {
 
 
             // Go to dashboard
+          if (response.data.user.role === "ADMIN") {
+
+              navigate("/admin");
+
+           } else if (response.data.user.role === "RECRUITER") {
+
+    navigate("/recruiter");
+
+             } else {
+
             navigate("/dashboard");
+
+             }
 
 
         } catch (error) {

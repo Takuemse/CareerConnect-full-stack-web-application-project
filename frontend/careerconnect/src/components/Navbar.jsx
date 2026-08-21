@@ -3,10 +3,9 @@ import { Link } from "react-router-dom";
 function Navbar() {
 
     return (
+        <nav className="bg-blue-600 text-white p-4">
 
-        <nav className="bg-white border-b">
-
-            <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="max-w-7xl mx-auto flex justify-between items-center">
 
                 <Link
                     to="/"
@@ -18,12 +17,9 @@ function Navbar() {
 
                 <div className="flex gap-6">
 
-                    <Link to="/">
-                        Home
-                    </Link>
                     <Link to="/jobs">
                         Find Jobs
-                      </Link>
+                    </Link>
 
                     <Link to="/login">
                         Login
@@ -33,14 +29,11 @@ function Navbar() {
                         Register
                     </Link>
 
-                    
-
                 </div>
 
             </div>
 
         </nav>
-
     );
 }
 
