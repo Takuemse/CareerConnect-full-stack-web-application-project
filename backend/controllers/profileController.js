@@ -1,178 +1,56 @@
-const { createProfile, getProfileByUserId, getProfileById, updateProfile,} = require("../queries/profileQueries");
-const { updateResume } = require("../queries/profileQueries");
+const {
+    createProfile, getProfileByUserId, updateProfile, updateResume
+} = require("../services/profileService");
+const AppError = require("../middleware/AppError");
 
-const create = async (req, res) => {
+const create = async (req, res, next) => {
     try {
-        const {
-            phone,
-            location,
-            bio,
-            skills
-        } = req.body;
-
-        const existingProfile =
-            await getProfileByUserId(req.user.id);
-
-        if (existingProfile) {
-            return res.status(409).json({
-                message: "Profile already exists"
-            });
-        }
-
-        const profile = await createProfile(
-            req.user.id,
-            phone,
-            location,
-            bio,
-            skills
-        );
-
-        res.status(201).json({
-            message: "Profile created successfully",
-            profile
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
-};
-const getMyProfile = async (req, res) => {
-    try {
-        const profile =
-            await getProfileByUserId(req.user.id);
-
-        if (!profile) {
-            return res.status(404).json({
-                message: "Profile not found"
-            });
-        }
-
-        res.status(200).json({
-            profile
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        const existing = await getProfileByUserId(req.user.id);
+        if (existing) return next(new AppError("Profile already exists", 409));
+        const profile = await createProfile(req.user.id, req.body);
+        res.status(201).json({ message: "Profile created successfully", profile });
+    } catch (error) { next(error); }
 };
 
-const update = async (req, res) => {
+const getMyProfile = async (req, res, next) => {
     try {
-        const {
-            phone,
-            location,
-            bio,
-            skills
-        } = req.body;
-
-        const profile =
-            await getProfileByUserId(req.user.id);
-
-        if (!profile) {
-            return res.status(404).json({
-                message: "Profile not found"
-            });
-        }
-
-        const updatedProfile =
-            await updateProfile(
-                req.user.id,
-                phone,
-                location,
-                bio,
-                skills
-            );
-
-        res.status(200).json({
-            message: "Profile updated successfully",
-            profile: updatedProfile
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        const profile = await getProfileByUserId(req.user.id);
+        if (!profile) return next(new AppError("Profile not found", 404));
+        res.status(200).json({ profile });
+    } catch (error) { next(error); }
 };
 
-const getCandidateProfile = async (req, res) => {
+const update = async (req, res, next) => {
     try {
-        const profile =
-            await getProfileById(req.params.id);
-
-        if (!profile) {
-            return res.status(404).json({
-                message: "Profile not found"
-            });
-        }
-
-        res.status(200).json({
-            profile
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        const existing = await getProfileByUserId(req.user.id);
+        if (!existing) return next(new AppError("Create your profile first", 404));
+        const updated = await updateProfile(req.user.id, req.body);
+        res.status(200).json({ message: "Profile updated successfully", profile: updated });
+    } catch (error) { next(error); }
 };
-const uploadResume = async (req, res) => {
+
+const getCandidateProfile = async (req, res, next) => {
     try {
+        const profile = await getProfileByUserId(req.params.userId);
+        if (!profile) return next(new AppError("Profile not found", 404));
+        res.status(200).json({ profile });
+    } catch (error) { next(error); }
+};
 
-        if (!req.file) {
-            return res.status(400).json({
-                message: "Please upload a resume"
-            });
-        }
+const uploadResume = async (req, res, next) => {
+    try {
+        if (!req.file) return next(new AppError("Please upload a resume file", 400));
+        const existing = await getProfileByUserId(req.user.id);
+        if (!existing) return next(new AppError("Create your profile first", 404));
 
-        const profile =
-            await getProfileByUserId(req.user.id);
-
-        if (!profile) {
-            return res.status(404).json({
-                message: "Create your profile first"
-            });
-        }
-
-        const updatedProfile =
-            await updateResume(
-                req.user.id,
-                req.file.filename
-            );
-
+        const resumeUrl = `/uploads/resumes/${req.file.filename}`;
+        const updated = await updateResume(req.user.id, resumeUrl, req.file.originalname);
         res.status(200).json({
             message: "Resume uploaded successfully",
-            resume: updatedProfile.resume
+            resumeUrl: updated.resumeUrl,
+            resumeName: updated.resumeName
         });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+    } catch (error) { next(error); }
 };
 
-
-module.exports = {
-    create,
-    getMyProfile,
-    update,
-    getCandidateProfile,
-    uploadResume
-    
-    
-};
+module.exports = { create, getMyProfile, update, getCandidateProfile, uploadResume };

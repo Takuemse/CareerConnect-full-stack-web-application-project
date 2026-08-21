@@ -1,115 +1,64 @@
+// filepath: c:\Users\Takudzwa W Musemwa\Desktop\career-connect\frontend\careerconnect\src\pages\Home.jsx
+import { FiArrowRight, FiBriefcase, FiCheckCircle, FiUsers } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
 function Home() {
+  return (
+    <main className="page-shell">
+      <section className="page-container grid items-center gap-12 py-12 md:grid-cols-2 md:py-20">
+        <div>
+          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-[#C4622D]">
+            Work, connected
+          </p>
 
-    return (
+          <h1 className="display-title">
+            Find work that moves you forward.
+          </h1>
 
-        <div className="min-h-screen bg-gray-50">
+          <p className="mt-6 max-w-xl text-lg leading-8 text-[#6B7280]">
+            CareerConnect brings ambitious people and meaningful opportunities
+            together in one focused professional community.
+          </p>
 
-            {/* Hero Section */}
-
-            <section className="py-20 text-center px-6">
-
-                <h1 className="text-5xl font-bold mb-6">
-                    Find Your Next Opportunity
-                </h1>
-
-                <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
-                    CareerConnect connects talented
-                    job seekers with great companies.
-                    Find jobs, apply with ease, and take
-                    the next step in your career.
-                </p>
-
-
-                {/* Buttons */}
-
-                <div className="flex justify-center gap-4">
-
-                    <Link
-                        to="/jobs"
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-                    >
-                        Find Jobs
-                    </Link>
-
-
-                    <Link
-                        to="/jobs/create"
-                        className="border border-gray-300 px-6 py-3 rounded-lg hover:bg-gray-100"
-                    >
-                        Post a Job
-                    </Link>
-
-                </div>
-
-            </section>
-
-
-            {/* Features Section */}
-
-            <section className="max-w-7xl mx-auto px-6 pb-20">
-
-                <div className="grid md:grid-cols-3 gap-6">
-
-
-                    {/* Job Seekers */}
-
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
-
-                        <h2 className="text-xl font-bold mb-3">
-                            Find Jobs
-                        </h2>
-
-                        <p className="text-gray-600">
-                            Discover job opportunities that
-                            match your skills, experience and
-                            career goals.
-                        </p>
-
-                    </div>
-
-
-                    {/* Recruiters */}
-
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
-
-                        <h2 className="text-xl font-bold mb-3">
-                            Hire Talent
-                        </h2>
-
-                        <p className="text-gray-600">
-                            Recruiters can post jobs and find
-                            talented candidates for their
-                            companies.
-                        </p>
-
-                    </div>
-
-
-                    {/* Applications */}
-
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
-
-                        <h2 className="text-xl font-bold mb-3">
-                            Track Applications
-                        </h2>
-
-                        <p className="text-gray-600">
-                            Apply for jobs and keep track of
-                            your application status from one
-                            place.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </section>
-
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link to="/jobs" className="primary-button">
+              Explore opportunities <FiArrowRight />
+            </Link>
+            <Link to="/register" className="dark-button">
+              Join CareerConnect
+            </Link>
+          </div>
         </div>
 
-    );
+        <div className="editorial-panel">
+          <p className="text-sm uppercase tracking-widest text-[#C4622D]">
+            The connection
+          </p>
+          <h2 className="mt-5 font-serif text-4xl text-[#14213D]">
+            Better matches begin with better conversations.
+          </h2>
+          <p className="mt-5 leading-7 text-[#6B7280]">
+            Discover roles, meet growing companies, and keep every application
+            organised from first contact to final decision.
+          </p>
+        </div>
+      </section>
+
+      <section className="page-container grid gap-5 pb-12 md:grid-cols-3">
+        {[
+          [FiBriefcase, "Find roles", "Search opportunities aligned with your goals."],
+          [FiUsers, "Meet companies", "Connect with teams looking for your perspective."],
+          [FiCheckCircle, "Track progress", "Follow applications through every stage."],
+        ].map(([Icon, title, text]) => (
+          <article key={title} className="bg-white p-6 shadow-sm">
+            <Icon className="text-2xl text-[#C4622D]" />
+            <h2 className="mt-5 font-serif text-2xl text-[#14213D]">{title}</h2>
+            <p className="mt-3 text-[#6B7280]">{text}</p>
+          </article>
+        ))}
+      </section>
+    </main>
+  );
 }
 
 export default Home;

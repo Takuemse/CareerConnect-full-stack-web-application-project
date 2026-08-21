@@ -1,31 +1,15 @@
 const { body } = require("express-validator");
 
 const applicationValidation = [
-
-    body("job_id")
-        .notEmpty()
-        .withMessage("Job ID is required")
-        .isInt({ min: 1 })
-        .withMessage(
-            "Job ID must be a valid number"
-        )
+    body("coverLetter").optional({ values: "falsy" }).trim().isLength({ max: 3000 }).withMessage("Cover letter is too long")
 ];
 
 const applicationStatusValidation = [
-
     body("status")
         .notEmpty()
         .withMessage("Status is required")
-        .isIn([
-            "PENDING",
-            "REVIEWING",
-            "ACCEPTED",
-            "REJECTED"
-        ])
+        .isIn(["PENDING", "REVIEWED", "ACCEPTED", "REJECTED"])
         .withMessage("Invalid application status")
 ];
 
-module.exports = {
-    applicationValidation,
-    applicationStatusValidation
-};
+module.exports = { applicationValidation, applicationStatusValidation };

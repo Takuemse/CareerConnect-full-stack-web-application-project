@@ -1,129 +1,74 @@
+// filepath: c:\Users\Takudzwa W Musemwa\Desktop\career-connect\frontend\careerconnect\src\pages\MyApplications.jsx
 import { useEffect, useState } from "react";
+import { FiRefreshCw } from "react-icons/fi";
 import api from "../services/api";
 
 function MyApplications() {
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    const [applications, setApplications] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+  useEffect(() => {
+    const loadApplications = async () => {
+      try {
+        const response = await api.get("/applications/my");
+        const data = response.data;
+        setApplications(data.applications || data || []);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load applications.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    loadApplications();
+  }, []);
 
-    useEffect(() => {
+  return (
+    <main className="page-shell">
+      <section className="mx-auto max-w-5xl">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C4622D]">
+          Your progress
+        </p>
+        <h1 className="mt-4 display-title">My applications</h1>
 
-        const getApplications = async () => {
+        {error && <p className="mt-6 error-message">{error}</p>}
 
-            try {
+        {loading ? (
+          <p className="mt-10 flex items-center gap-3 text-[#6B7280]">
+            <FiRefreshCw className="animate-spin" /> Loading applications...
+          </p>
+        ) : applications.length === 0 ? (
+          <div className="mt-10 empty-state">
+            You have not applied for any jobs yet.
+          </div>
+        ) : (
+          <div className="mt-10 space-y-5">
+            {applications.map((application) => (
+              <article key={application.id} className="editorial-panel">
+                <div className="flex flex-col justify-between gap-4 md:flex-row">
+                  <div>
+                    <h2 className="font-serif text-2xl text-[#14213D]">
+                      {application.job?.title || application.jobTitle || "Untitled role"}
+                    </h2>
+                    <p className="mt-2 text-[#6B7280]">
+                      {application.job?.company?.name ||
+                        application.companyName ||
+                        "Company"}
+                    </p>
+                  </div>
 
-                const response =
-                    await api.get("/applications/my");
-
-                setApplications(
-                    response.data.applications ||
-                    response.data
-                );
-
-            } catch (error) {
-
-                console.error(error);
-
-                setError(
-                    error.response?.data?.message ||
-                    "Failed to load applications."
-                );
-
-            } finally {
-
-                setLoading(false);
-
-            }
-        };
-
-        getApplications();
-
-    }, []);
-
-
-    if (loading) {
-
-        return (
-            <div className="p-8">
-                Loading applications...
-            </div>
-        );
-
-    }
-
-
-    return (
-
-        <div className="min-h-screen bg-gray-100">
-
-            <div className="max-w-5xl mx-auto p-8">
-
-                <h1 className="text-3xl font-bold mb-8">
-                    My Applications
-                </h1>
-
-
-                {error && (
-
-                    <div className="bg-red-100 text-red-700 p-4 rounded mb-6">
-                        {error}
-                    </div>
-
-                )}
-
-
-                {applications.length === 0 ? (
-
-                    <div className="bg-white p-8 rounded-lg">
-                        <p>
-                            You haven't applied for any jobs yet.
-                        </p>
-                    </div>
-
-                ) : (
-
-                    <div className="space-y-4">
-
-                        {applications.map(
-                            (application) => (
-
-                            <div
-                                key={application.id}
-                                className="bg-white p-6 rounded-lg shadow"
-                            >
-
-                                <h2 className="text-xl font-bold">
-                                    {application.job_title}
-                                </h2>
-
-
-                                <p className="text-gray-600 mt-2">
-                                    {application.company_name}
-                                </p>
-
-
-                                <p className="mt-3">
-                                    Status:
-                                    <span className="ml-2 font-semibold">
-                                        {application.status}
-                                    </span>
-                                </p>
-
-                            </div>
-
-                        ))}
-
-                    </div>
-
-                )}
-
-            </div>
-
-        </div>
-
-    );
+                  <span className="h-fit w-fit border border-[#6B7A5E] px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#6B7A5E]">
+                    {application.status || "PENDING"}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
 }
 
 export default MyApplications;

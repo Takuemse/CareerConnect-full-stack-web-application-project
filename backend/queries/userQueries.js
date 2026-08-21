@@ -1,31 +1,34 @@
-const pool = require('../config/db')
+const prisma = require("../config/db");
 
-
-const createUser = async(name, email, password, role) => {
-    const result = await pool.query(
-     'INSERT INTO users(name, email, password, role) VALUES($1, $2, $3, $4) RETURNING id, name, email,role, created_at',[name, email, password, role]
-    );
-
-    return result.rows[0];
+const publicUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  isBanned: true,
+  createdAt: true,
+  updatedAt: true,
 };
 
-const findUserByEmail = async(email) => {
-    const result = await pool.query(
-        'SELECT * FROM users WHERE email = $1',[email]
-    )
-    return result.rows[0]
-}
+const createUser = (name, email, password, role = "JOB_SEEKER") =>
+  prisma.user.create({
+    data: { name, email, password, role },
+    select: publicUserSelect,
+  });
 
-const findUserById = async(id) => {
-    const result = await pool.query(
-        'SELECT id, name, email, role, created_at FROM users WHERE id = $1',[id]
-    )
-    return result.rows[0]
+const findUserByEmail = (email) =>
+  prisma.user.findUnique({
+    where: { email },
+  });
 
-}
+const findUserById = (id) =>
+  prisma.user.findUnique({
+    where: { id: Number(id) },
+    select: publicUserSelect,
+  });
 
 module.exports = {
-    createUser,
-    findUserByEmail,
-    findUserById,
-}
+  createUser,
+  findUserByEmail,
+  findUserById,
+};

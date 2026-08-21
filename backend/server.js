@@ -1,45 +1,72 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const pool = require('../backend/config/db')
+require("dotenv").config();
 
-require('dotenv').config();
+const path = require("path");
+const express = require("express");
+const cors = require("cors");
 
-const authRoutes = require('../backend/routes/authRoutes')
-const companyRoutes = require("../backend/routes/companyRoutes");
-const jobRoutes = require('../backend/routes/jobRoutes')
-const applicationRoutes = require("../backend/routes/applicationRoutes");
+const prisma = require("./config/db");
+
+const userRoutes = require("./routes/userRoutes");
+const companyRoutes = require("./routes/companyRoutes");
+const jobRoutes = require("./routes/jobRoutes");
+const applicationRoutes = require("./routes/applicationRoutes");
 const profileRoutes = require("./routes/profileRoutes");
-const userRoutes = require('./routes/userRoutes')
-const notFound = require("./middleware/notFoundMiddleware");
 
-const errorHandler = require("./middleware/errorMiddleware");
+const app = express();
 
+app.use(
+  cors({
+    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 app.use(express.json());
-app.use(cors());
+app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use('/api/auth/', authRoutes)
-app.use('/api/companies',companyRoutes)
-app.use('/api/users',userRoutes)
-app.use('/api/jobs',jobRoutes)
-app.use("/api/applications",applicationRoutes)
+app.get("/", (req, res) => {
+  res.json({ message: "CareerConnect API is running" });
+});
+
+app.use("/api/auth", userRoutes);
+app.use("/api/companies", companyRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/applications", applicationRoutes);
 app.use("/api/profiles", profileRoutes);
 
-app.use(notFound);
-app.use(errorHandler);
-
-
-app.get('/', (req, res) =>{
-    res.json({
-        message: "CareerConnect is running on API"
-    })
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
 });
 
-
-
-const PORT = process.env.PORT || 5000
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`)
+app.use((error, req, res, next) => {
+  console.error(error);
+  res.status(error.statusCode || 500).json({
+    message: error.message || "Internal server error",
+  });
 });
+
+const PORT = process.env.PORT || 5000;
+
+const server = app.listen(PORT, async () => {
+  try {
+    await prisma.$connect();
+    console.log(`CareerConnect API is running on port ${PORT}`);
+    console.log("Database connected via Prisma");
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    process.exit(1);
+  }
+});
+
+const shutdown = async () => {
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
+module.exports = app;

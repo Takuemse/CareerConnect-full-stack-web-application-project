@@ -1,93 +1,81 @@
-const pool = require("../config/db");
+const prisma = require("../config/db");
 
-const createApplication = async (
-    jobId,
-    applicantId,
-    coverLetter
-) => {
-    const result = await pool.query(
-        `INSERT INTO applications
-        (job_id, applicant_id, cover_letter)
-        VALUES ($1, $2, $3)
-        RETURNING *`,
-        [
-            jobId,
-            applicantId,
-            coverLetter
-        ]
-    );
-
-    return result.rows[0];
+const applicationInclude = {
+  job: {
+    include: {
+      company: true,
+    },
+  },
+  applicant: {
+    include: {
+      profile: true,
+    },
+  },
 };
 
-const findApplication = async (
-    jobId,
-    applicantId
-) => {
-    const result = await pool.query(
-        `SELECT *
-         FROM applications
-         WHERE job_id = $1
-         AND applicant_id = $2`,
-        [
-            jobId,
-            applicantId
-        ]
-    );
+const createApplication = (jobId, applicantId, coverLetter) =>
+  prisma.application.create({
+    data: {
+      jobId: Number(jobId),
+      applicantId: Number(applicantId),
+      coverLetter: coverLetter || null,
+    },
+    include: applicationInclude,
+  });
 
-    return result.rows[0];
-};
+const findApplication = (jobId, applicantId) =>
+  prisma.application.findUnique({
+    where: {
+      jobId_applicantId: {
+        jobId: Number(jobId),
+        applicantId: Number(applicantId),
+      },
+    },
+    include: applicationInclude,
+  });
 
-const getApplicationsByApplicant = async (
-    applicantId
-) => {
-    const result = await pool.query( 'SELECT applications.id, applications.status, applications.cover_letter, applications.applied_at, jobs.id AS job_id, jobs.title AS job_title, jobs.location, jobs.job_type, companies.id AS company_id, companies.name AS company_name FROM applications JOIN jobs ON applications.job_id = jobs.id JOIN companies ON jobs.company_id = companies.id WHERE applications.applicant_id = $1 ORDER BY applications.applied_at DESC',
-        [applicantId]
-    );
+const getApplicationsByApplicant = (applicantId) =>
+  prisma.application.findMany({
+    where: { applicantId: Number(applicantId) },
+    include: applicationInclude,
+    orderBy: { appliedAt: "desc" },
+  });
 
-    return result.rows;
-};
+const getApplicationsByJob = (jobId) =>
+  prisma.application.findMany({
+    where: { jobId: Number(jobId) },
+    include: applicationInclude,
+    orderBy: { appliedAt: "desc" },
+  });
 
-const getApplicationsByJob = async (jobId) => {
-    const result = await pool.query( 'SELECT applications.id, applications.status, applications.cover_letter, applications.applied_at users.id AS applicant_id,  users.name AS applicant_name,  users.email AS applicant_email, profiles.phone, profiles.location, profiles.skills, profiles.resume FROM applications JOIN users ON applications.applicant_id = users.id LEFT JOIN profiles ON users.id = profiles.user_id WHERE applications.job_id = $1 ORDER BY applications.applied_at DESC',
-        [jobId]
-    );
+const updateApplicationStatus = (applicationId, status) =>
+  prisma.application.update({
+    where: { id: Number(applicationId) },
+    data: { status },
+    include: applicationInclude,
+  });
 
-    return result.rows;
-};
+const getApplicationWithJob = (applicationId) =>
+  prisma.application.findUnique({
+    where: { id: Number(applicationId) },
+    include: {
+      job: {
+        select: {
+          id: true,
+          companyId: true,
+          company: {
+            select: { recruiterId: true },
+          },
+        },
+      },
+    },
+  });
 
-const updateApplicationStatus = async (
-    applicationId,
-    status
-) => {
-    const result = await pool.query(' UPDATE applications SET status = $1 WHERE id = $2 RETURNING *',
-        [
-            status,
-            applicationId
-        ]
-    );
-
-    return result.rows[0];
-};
-const getApplicationWithJob = async (applicationId) => {
-    const result = await pool.query(
-        `SELECT
-            applications.*,
-            jobs.company_id
-         FROM applications
-         JOIN jobs
-         ON applications.job_id = jobs.id
-         WHERE applications.id = $1`,
-        [applicationId]
-    );
-
-    return result.rows[0];
-};
 module.exports = {
-    createApplication,
-    findApplication,
-    getApplicationsByApplicant,
-    getApplicationsByJob,
-    updateApplicationStatus,
-    getApplicationWithJob
+  createApplication,
+  findApplication,
+  getApplicationsByApplicant,
+  getApplicationsByJob,
+  updateApplicationStatus,
+  getApplicationWithJob,
 };

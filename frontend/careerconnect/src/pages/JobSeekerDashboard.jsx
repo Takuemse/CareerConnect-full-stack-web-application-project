@@ -1,86 +1,43 @@
+// filepath: c:\Users\Takudzwa W Musemwa\Desktop\career-connect\frontend\careerconnect\src\pages\JobSeekerDashboard.jsx
+import { FiArrowRight, FiBriefcase, FiFileText, FiUser } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function JobSeekerDashboard() {
+  const { user } = useAuth();
 
-    const { user } = useAuth();
+  const actions = [
+    [FiBriefcase, "Find jobs", "Browse and filter current opportunities.", "/jobs"],
+    [FiFileText, "Applications", "Track your submitted applications.", "/applications"],
+    [FiUser, "Profile", "Keep your professional details current.", "/profile"],
+  ];
 
-    return (
-        <div className="min-h-screen bg-gray-100">
+  return (
+    <main className="page-shell">
+      <section className="page-container">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C4622D]">
+          Job seeker workspace
+        </p>
+        <h1 className="mt-4 display-title">Welcome back, {user?.name}.</h1>
+        <p className="mt-5 text-lg text-[#6B7280]">
+          Your next opportunity may be closer than you think.
+        </p>
 
-            <div className="max-w-7xl mx-auto p-8">
-
-                <div className="mb-8">
-
-                    <h1 className="text-3xl font-bold">
-                        Job Seeker Dashboard
-                    </h1>
-
-                    <p className="text-gray-600 mt-2">
-                        Welcome back, {user?.name}
-                    </p>
-
-                </div>
-
-
-                <div className="grid md:grid-cols-3 gap-6">
-
-                    {/* Find Jobs */}
-
-                    <Link
-                        to="/jobs"
-                        className="bg-white p-6 rounded-lg shadow hover:shadow-md transition"
-                    >
-
-                        <h2 className="text-xl font-bold mb-2">
-                            Find Jobs
-                        </h2>
-
-                        <p className="text-gray-600">
-                            Browse available job opportunities.
-                        </p>
-
-                    </Link>
-
-
-                    {/* Applications */}
-
-                    <Link
-                        to="/applications"
-                        className="bg-white p-6 rounded-lg shadow hover:shadow-md transition"
-                    >
-
-                        <h2 className="text-xl font-bold mb-2">
-                            My Applications
-                        </h2>
-
-                        <p className="text-gray-600">
-                            Track the jobs you have applied for.
-                        </p>
-
-                    </Link>
-
-
-                    {/* Profile */}
-
-                    <div className="bg-white p-6 rounded-lg shadow">
-
-                        <h2 className="text-xl font-bold mb-2">
-                            My Profile
-                        </h2>
-
-                        <p className="text-gray-600">
-                            Manage your personal information and skills.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {actions.map(([Icon, title, text, to]) => (
+            <Link key={title} to={to} className="editorial-panel group">
+              <Icon className="text-2xl text-[#C4622D]" />
+              <h2 className="mt-5 font-serif text-2xl text-[#14213D]">{title}</h2>
+              <p className="mt-3 text-[#6B7280]">{text}</p>
+              <span className="mt-6 flex items-center gap-2 text-sm text-[#C4622D]">
+                Open <FiArrowRight />
+              </span>
+            </Link>
+          ))}
         </div>
-    );
+      </section>
+    </main>
+  );
 }
 
 export default JobSeekerDashboard;

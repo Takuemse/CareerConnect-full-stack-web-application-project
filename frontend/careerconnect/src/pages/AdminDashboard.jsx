@@ -1,149 +1,61 @@
+// filepath: c:\Users\Takudzwa W Musemwa\Desktop\career-connect\frontend\careerconnect\src\pages\AdminDashboard.jsx
+import { FiBriefcase, FiFileText, FiShield, FiUsers } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function AdminDashboard() {
+  const { user } = useAuth();
 
-    const { user } = useAuth();
+  const actions = [
+    [FiUsers, "Manage users", "Review platform accounts.", "/admin/users"],
+    [FiBriefcase, "Manage jobs", "Review published job listings.", "/jobs"],
+    [FiFileText, "Applications", "Monitor submitted applications.", "/admin/applications"],
+  ];
 
-    return (
-        <div className="min-h-screen bg-gray-100">
+  return (
+    <main className="page-shell">
+      <section className="page-container">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C4622D]">
+          Administration
+        </p>
+        <h1 className="mt-4 display-title">System overview</h1>
+        <p className="mt-5 text-lg text-[#6B7280]">
+          Welcome, {user?.name}. Manage CareerConnect from one workspace.
+        </p>
 
-            <div className="max-w-7xl mx-auto p-8">
-
-                {/* Header */}
-
-                <div className="mb-8">
-
-                    <h1 className="text-3xl font-bold">
-                        Admin Dashboard
-                    </h1>
-
-                    <p className="text-gray-600 mt-2">
-                        Welcome, {user?.name}
-                    </p>
-
-                    <p className="text-sm text-gray-500 mt-1">
-                        System administration and monitoring
-                    </p>
-
-                </div>
-
-
-                {/* Statistics */}
-
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-
-                    <div className="bg-white p-6 rounded-lg shadow">
-
-                        <p className="text-gray-500">
-                            Users
-                        </p>
-
-                        <h2 className="text-3xl font-bold mt-2">
-                            Manage
-                        </h2>
-
-                    </div>
-
-
-                    <div className="bg-white p-6 rounded-lg shadow">
-
-                        <p className="text-gray-500">
-                            Jobs
-                        </p>
-
-                        <h2 className="text-3xl font-bold mt-2">
-                            Manage
-                        </h2>
-
-                    </div>
-
-
-                    <div className="bg-white p-6 rounded-lg shadow">
-
-                        <p className="text-gray-500">
-                            Applications
-                        </p>
-
-                        <h2 className="text-3xl font-bold mt-2">
-                            Monitor
-                        </h2>
-
-                    </div>
-
-                </div>
-
-
-                {/* Admin Actions */}
-
-                <div className="grid md:grid-cols-2 gap-6">
-
-                    <Link
-                        to="/admin/users"
-                        className="bg-white p-6 rounded-lg shadow hover:shadow-md"
-                    >
-
-                        <h2 className="text-xl font-bold mb-2">
-                            Manage Users
-                        </h2>
-
-                        <p className="text-gray-600">
-                            View and manage CareerConnect users.
-                        </p>
-
-                    </Link>
-
-
-                    <Link
-                        to="/jobs"
-                        className="bg-white p-6 rounded-lg shadow hover:shadow-md"
-                    >
-
-                        <h2 className="text-xl font-bold mb-2">
-                            Manage Jobs
-                        </h2>
-
-                        <p className="text-gray-600">
-                            View job listings on the platform.
-                        </p>
-
-                    </Link>
-
-
-                    <Link
-                        to="/admin/applications"
-                        className="bg-white p-6 rounded-lg shadow hover:shadow-md"
-                    >
-
-                        <h2 className="text-xl font-bold mb-2">
-                            Applications
-                        </h2>
-
-                        <p className="text-gray-600">
-                            Monitor job applications.
-                        </p>
-
-                    </Link>
-
-
-                    <div className="bg-white p-6 rounded-lg shadow">
-
-                        <h2 className="text-xl font-bold mb-2">
-                            System Status
-                        </h2>
-
-                        <p className="text-green-600 font-medium">
-                            ● System Operational
-                        </p>
-
-                    </div>
-
-                </div>
-
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {[
+            ["Users", "Manage"],
+            ["Jobs", "Review"],
+            ["Applications", "Monitor"],
+          ].map(([label, value]) => (
+            <div key={label} className="bg-white p-6 shadow-sm">
+              <p className="text-[#6B7280]">{label}</p>
+              <p className="mt-3 font-serif text-3xl text-[#14213D]">{value}</p>
             </div>
-
+          ))}
         </div>
-    );
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          {actions.map(([Icon, title, text, to]) => (
+            <Link key={title} to={to} className="editorial-panel">
+              <Icon className="text-2xl text-[#C4622D]" />
+              <h2 className="mt-5 font-serif text-2xl text-[#14213D]">{title}</h2>
+              <p className="mt-3 text-[#6B7280]">{text}</p>
+            </Link>
+          ))}
+
+          <div className="bg-white p-6 shadow-sm">
+            <FiShield className="text-2xl text-[#6B7A5E]" />
+            <h2 className="mt-5 font-serif text-2xl text-[#14213D]">
+              System status
+            </h2>
+            <p className="mt-3 text-[#6B7A5E]">All services operational</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 export default AdminDashboard;

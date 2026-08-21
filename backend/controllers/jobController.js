@@ -1,212 +1,144 @@
-const { createJob, getAllJobs, getJobById, updateJob, deleteJob} = require("../queries/jobQueries");
+const {
+  createJob,
+  getAllJobs,
+  getJobById,
+  getJobsByCompanyId,
+  updateJob,
+  deleteJob,
+} = require("../services/jobService");
 
-const { getCompanyById } = require("../queries/companyQueries");
+const {
+  getCompanyByRecruiterId,
+  getCompanyById,
+} = require("../services/companyService");
 
+const AppError = require("../middleware/AppError");
 
-const create = async (req, res) => {
-    try {
-        const { companyId, title, description, location, salaryMin, salaryMax, jobType } = req.body;
+const create = async (req, res, next) => {
+  try {
+    const company = await getCompanyByRecruiterId(req.user.id);
 
-        if (!companyId || !title || !description) {
-            return res.status(400).json({
-                message: "Company, title and description are required"
-            });
-        }
-
-        const company = await getCompanyById(companyId);
-
-        if (!company) {
-            return res.status(404).json({
-                message: "Company not found"
-            });
-        }
-
-        if (company.recruiter_id !== req.user.id) {
-            return res.status(403).json({
-                message: "You can only create jobs for your own company"
-            });
-        }
-
-        const job = await createJob( companyId, title, description, location, salaryMin, salaryMax, jobType
-        );
-
-        res.status(201).json({
-            message: "Job created successfully",
-            job
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
+    if (!company) {
+      return next(
+        new AppError("Create a company profile before posting jobs", 400)
+      );
     }
-};
-const getAll = async (req, res) => {
-    try {
 
-       const {
-    keyword,
-    location,
-    jobType,
-    minSalary,
-    maxSalary,
-    company,
-    limit,
-    offset
-} = req.query;
+    const job = await createJob(company.id, req.body);
 
-       const jobs = await getAllJobs({
-    keyword,
-    location,
-    jobType,
-    minSalary,
-    maxSalary,
-    company,
-    limit,
-    offset
-});
-if (
-    minSalary !== undefined &&
-    isNaN(Number(minSalary))
-) {
-    return res.status(400).json({
-        message: "minSalary must be a number"
+    res.status(201).json({
+      message: "Job created successfully",
+      job,
     });
-}
+  } catch (error) {
+    next(error);
+  }
+};
 
-if (
-    maxSalary !== undefined &&
-    isNaN(Number(maxSalary))
-) {
-    return res.status(400).json({
-        message: "maxSalary must be a number"
+const getAll = async (req, res, next) => {
+  try {
+    const jobs = await getAllJobs(req.query || {});
+
+    res.status(200).json({
+      count: jobs.length,
+      total: jobs.length,
+      limit: Number(req.query.limit) || 10,
+      offset: Number(req.query.offset) || 0,
+      jobs,
     });
-}
-if (
-    minSalary !== undefined &&
-    maxSalary !== undefined &&
-    Number(minSalary) > Number(maxSalary)
-) {
-    return res.status(400).json({
-        message:
-            "minSalary cannot be greater than maxSalary"
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getOne = async (req, res, next) => {
+  try {
+    const job = await getJobById(req.params.id);
+
+    if (!job) {
+      return next(new AppError("Job not found", 404));
+    }
+
+    res.status(200).json({ job });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMine = async (req, res, next) => {
+  try {
+    const company = await getCompanyByRecruiterId(req.user.id);
+
+    if (!company) {
+      return res.status(200).json({ jobs: [] });
+    }
+
+    const jobs = await getJobsByCompanyId(company.id);
+
+    res.status(200).json({ jobs });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const update = async (req, res, next) => {
+  try {
+    const job = await getJobById(req.params.id);
+
+    if (!job) {
+      return next(new AppError("Job not found", 404));
+    }
+
+    const company = await getCompanyById(job.companyId);
+
+    if (!company || company.recruiterId !== req.user.id) {
+      return next(
+        new AppError("You can only update your own jobs", 403)
+      );
+    }
+
+    const updated = await updateJob(req.params.id, req.body);
+
+    res.status(200).json({
+      message: "Job updated successfully",
+      job: updated,
     });
-}
-        res.status(200).json({
-            count: jobs.length,
-               limit: Number(limit) || 10,
-               offset: Number(offset) || 0,
-            jobs
-        });
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+  } catch (error) {
+    next(error);
+  }
 };
 
-const getOne = async (req, res) => {
-    try {
-        const job = await getJobById(req.params.id);
+const remove = async (req, res, next) => {
+  try {
+    const job = await getJobById(req.params.id);
 
-        if (!job) {
-            return res.status(404).json({
-                message: "Job not found"
-            });
-        }
-
-        res.status(200).json({
-            job
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
+    if (!job) {
+      return next(new AppError("Job not found", 404));
     }
-};
 
-const update = async (req, res) => {
-    try {
-        const job = await getJobById(req.params.id);
+    const company = await getCompanyById(job.companyId);
 
-        if (!job) {
-            return res.status(404).json({
-                message: "Job not found"
-            });
-        }
-
-        const company = await getCompanyById(job.company_id);
-
-        if (company.recruiter_id !== req.user.id) {
-            return res.status(403).json({
-                message: "You can only update your own jobs"
-            });
-        }
-
-        const {  title,  description,  location,  salaryMin,  salaryMax, jobType } = req.body;
-
-        const updatedJob = await updateJob( req.params.id, title, description, location, salaryMin, salaryMax, jobType);
-
-        res.status(200).json({
-            message: "Job updated successfully",
-            job: updatedJob
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
+    if (!company || company.recruiterId !== req.user.id) {
+      return next(
+        new AppError("You can only delete your own jobs", 403)
+      );
     }
-};
 
-const remove = async (req, res) => {
-    try {
-        const job = await getJobById(req.params.id);
+    await deleteJob(req.params.id);
 
-        if (!job) {
-            return res.status(404).json({
-                message: "Job not found"
-            });
-        }
-
-        const company = await getCompanyById(job.company_id);
-
-        if (company.recruiter_id !== req.user.id) {
-            return res.status(403).json({
-                message: "You can only delete your own jobs"
-            });
-        }
-
-        await deleteJob(req.params.id);
-
-        res.status(200).json({
-            message: "Job deleted successfully"
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+    res.status(200).json({
+      message: "Job deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
-    create,
-    getAll,
-    getOne,
-    update,
-    remove
+  create,
+  getAll,
+  getOne,
+  getMine,
+  update,
+  remove,
 };

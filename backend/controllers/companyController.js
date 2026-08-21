@@ -1,140 +1,67 @@
-const { createCompany, getAllCompanies, getCompanyById, updateCompany, deleteCompany } = require("../queries/companyQueries");
+const {
+    createCompany, getAllCompanies, getCompanyById,
+    getCompanyByRecruiterId, updateCompany, deleteCompany
+} = require("../services/companyService");
+const AppError = require("../middleware/AppError");
 
-const create = async (req, res) => {
+const create = async (req, res, next) => {
     try {
-        const { name, description, location, website } = req.body;
-
-        if (!name) {
-            return res.status(400).json({
-                message: "Company name is required"
-            });
+        const existing = await getCompanyByRecruiterId(req.user.id);
+        if (existing) {
+            return next(new AppError("You already have a company profile", 409));
         }
-
-        const company = await createCompany( req.user.id, name, description, location, website );
-
-        res.status(201).json({
-            message: "Company created successfully",
-            company
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        const { name, description, location, website, industry } = req.body;
+        const company = await createCompany(req.user.id, name, description, location, website, industry);
+        res.status(201).json({ message: "Company created successfully", company });
+    } catch (error) { next(error); }
 };
 
-const getAll = async (req, res) => {
+const getAll = async (req, res, next) => {
     try {
         const companies = await getAllCompanies();
-
-        res.status(200).json({
-            companies
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        res.status(200).json({ companies });
+    } catch (error) { next(error); }
 };
 
-const getOne = async (req, res) => {
+const getOne = async (req, res, next) => {
     try {
         const company = await getCompanyById(req.params.id);
-
-        if (!company) {
-            return res.status(404).json({
-                message: "Company not found"
-            });
-        }
-
-        res.status(200).json({
-            company
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        if (!company) return next(new AppError("Company not found", 404));
+        res.status(200).json({ company });
+    } catch (error) { next(error); }
 };
 
-const update = async (req, res) => {
+const getMine = async (req, res, next) => {
     try {
-        const company = await getCompanyById(req.params.id);
-
-        if (!company) {
-            return res.status(404).json({
-                message: "Company not found"
-            });
-        }
-
-        if (company.recruiter_id !== req.user.id) {
-            return res.status(403).json({
-                message: "You can only update your own company"
-            });
-        }
-
-        const { name, description, location, website } = req.body;
-
-        const updatedCompany = await updateCompany( req.params.id, name, description, location, website );
-
-        res.status(200).json({
-            message: "Company updated successfully",
-            company: updatedCompany
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        const company = await getCompanyByRecruiterId(req.user.id);
+        if (!company) return next(new AppError("You have not created a company profile yet", 404));
+        res.status(200).json({ company });
+    } catch (error) { next(error); }
 };
 
-const remove = async (req, res) => {
+const update = async (req, res, next) => {
     try {
         const company = await getCompanyById(req.params.id);
-
-        if (!company) {
-            return res.status(404).json({
-                message: "Company not found"
-            });
+        if (!company) return next(new AppError("Company not found", 404));
+        if (company.recruiterId !== req.user.id) {
+            return next(new AppError("You can only update your own company", 403));
         }
+        const { name, description, location, website, industry } = req.body;
+        const updated = await updateCompany(req.params.id, { name, description, location, website, industry });
+        res.status(200).json({ message: "Company updated successfully", company: updated });
+    } catch (error) { next(error); }
+};
 
-        if (company.recruiter_id !== req.user.id) {
-            return res.status(403).json({
-                message: "You can only delete your own company"
-            });
+const remove = async (req, res, next) => {
+    try {
+        const company = await getCompanyById(req.params.id);
+        if (!company) return next(new AppError("Company not found", 404));
+        if (company.recruiterId !== req.user.id) {
+            return next(new AppError("You can only delete your own company", 403));
         }
-
         await deleteCompany(req.params.id);
-
-        res.status(200).json({
-            message: "Company deleted successfully"
-        });
-
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Server error"
-        });
-    }
+        res.status(200).json({ message: "Company deleted successfully" });
+    } catch (error) { next(error); }
 };
 
-module.exports = {
-    create,
-    getAll,
-    getOne,
-    update,
-    remove
-};
+module.exports = { create, getAll, getOne, getMine, update, remove };

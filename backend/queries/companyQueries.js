@@ -1,73 +1,87 @@
+const prisma = require("../config/db");
 
-const pool = require("../config/db");
-
-const createCompany = async (
-    recruiterId,
-    name,
-    description,
-    location,
-    website
-) => {
-    const result = await pool.query(
-        'INSERT INTO companies(recruiter_id, name, description, location, website) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [
-            recruiterId,
-            name,
-            description,
-            location,
-            website
-        ]
-    );
-
-    return result.rows[0];
+const companyInclude = {
+  recruiter: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  _count: {
+    select: { jobs: true },
+  },
 };
 
-const getAllCompanies = async () => {
-    const result = await pool.query( 'SELECT * FROM companies ORDER BY id DESC');
+const createCompany = (
+  recruiterId,
+  name,
+  description,
+  location,
+  website,
+  industry
+) =>
+  prisma.company.create({
+    data: {
+      recruiterId: Number(recruiterId),
+      name,
+      description: description || null,
+      location: location || null,
+      website: website || null,
+      industry: industry || null,
+    },
+    include: companyInclude,
+  });
 
-    return result.rows;
-};
+const getAllCompanies = () =>
+  prisma.company.findMany({
+    include: companyInclude,
+    orderBy: { id: "desc" },
+  });
 
-const getCompanyById = async (id) => {
-    const result = await pool.query('SELECT * FROM companies WHERE id = $1',
-      [id]
-    );
+const getCompanyById = (id) =>
+  prisma.company.findUnique({
+    where: { id: Number(id) },
+    include: companyInclude,
+  });
 
-    return result.rows[0];
-};
+const getCompaniesByRecruiter = (recruiterId) =>
+  prisma.company.findMany({
+    where: { recruiterId: Number(recruiterId) },
+    include: companyInclude,
+    orderBy: { id: "desc" },
+  });
 
-const updateCompany = async (
-    id,
-    name,
-    description,
-    location,
-    website
-) => {
-    const result = await pool.query('UPDATE companies SET name = $1, description = $2, location = $3, website = $4 WHERE id = $5 RETURNING *',
-        [
-            name,
-            description,
-            location,
-            website,
-            id
-        ]
-    );
+const updateCompany = (
+  id,
+  name,
+  description,
+  location,
+  website,
+  industry
+) =>
+  prisma.company.update({
+    where: { id: Number(id) },
+    data: {
+      ...(name !== undefined && { name }),
+      ...(description !== undefined && { description }),
+      ...(location !== undefined && { location }),
+      ...(website !== undefined && { website }),
+      ...(industry !== undefined && { industry }),
+    },
+    include: companyInclude,
+  });
 
-    return result.rows[0];
-};
-
-const deleteCompany = async (id) => {
-    const result = await pool.query( 'DELETE FROM companies WHERE id = $1 RETURNING *',
-        [id]
-    );
-
-    return result.rows[0];
-};
+const deleteCompany = (id) =>
+  prisma.company.delete({
+    where: { id: Number(id) },
+  });
 
 module.exports = {
-    createCompany,
-    getAllCompanies,
-    getCompanyById,
-    updateCompany,
-    deleteCompany
+  createCompany,
+  getAllCompanies,
+  getCompanyById,
+  getCompaniesByRecruiter,
+  updateCompany,
+  deleteCompany,
 };

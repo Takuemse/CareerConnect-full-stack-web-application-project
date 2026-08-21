@@ -1,179 +1,195 @@
-const pool = require("../config/db");
+const prisma = require("../config/db");
 
-const createJob = async (
-    companyId,
-    title,
-    description,
-    location,
-    salaryMin,
-    salaryMax,
-    jobType
-) => {
-    const result = await pool.query('INSERT INTO jobs(company_id, title, description, location, salary_min, salary_max, job_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-        [
-            companyId,
-            title,
-            description,
-            location,
-            salaryMin,
-            salaryMax,
-            jobType
-        ]
-    );
-
-    return result.rows[0];
+const jobInclude = {
+  company: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      location: true,
+      website: true,
+      industry: true,
+      recruiterId: true,
+    },
+  },
+  _count: {
+    select: {
+      applications: true,
+    },
+  },
 };
 
-const getAllJobs = async (filters) => {
+const createJob = async (
+  companyId,
+  title,
+  description,
+  requirements,
+  location,
+  salaryMin,
+  salaryMax,
+  jobType
+) => {
+  return prisma.job.create({
+    data: {
+      companyId: Number(companyId),
+      title,
+      description,
+      requirements: requirements || null,
+      location,
+      salaryMin: Number(salaryMin),
+      salaryMax: Number(salaryMax),
+      jobType,
+    },
+    include: jobInclude,
+  });
+};
 
-    let query = `
-        SELECT
-            jobs.*,
-            companies.name AS company_name
-        FROM jobs
-        JOIN companies
-        ON jobs.company_id = companies.id
-    `;
+const getAllJobs = async (filters = {}) => {
+  filters = filters || {};
 
-    const conditions = [];
-    const values = [];
+  const where = {};
 
-    let parameterIndex = 1;
+  if (filters.keyword) {
+    where.OR = [
+      {
+        title: {
+          contains: String(filters.keyword),
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: String(filters.keyword),
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
 
-    if (filters.keyword) {
-        conditions.push(`
-            (
-                jobs.title ILIKE $${parameterIndex}
-                OR jobs.description ILIKE $${parameterIndex}
-            )
-        `);
+  if (filters.location) {
+    where.location = {
+      contains: String(filters.location),
+      mode: "insensitive",
+    };
+  }
 
-        values.push(`%${filters.keyword}%`);
-        parameterIndex++;
-    }
+  if (filters.company) {
+    where.company = {
+      name: {
+        contains: String(filters.company),
+        mode: "insensitive",
+      },
+    };
+  }
 
-    if (filters.location) {
-        conditions.push(
-            `jobs.location ILIKE $${parameterIndex}`
-        );
+  if (filters.jobType) {
+    where.jobType = filters.jobType;
+  }
 
-        values.push(`%${filters.location}%`);
-        parameterIndex++;
-    }
+  const minSalary = Number(filters.minSalary);
+  if (filters.minSalary !== undefined && Number.isFinite(minSalary)) {
+    where.salaryMax = {
+      gte: minSalary,
+    };
+  }
 
-    if (filters.jobType) {
-        conditions.push(
-            `jobs.job_type = $${parameterIndex}`
-        );
+  const maxSalary = Number(filters.maxSalary);
+  if (filters.maxSalary !== undefined && Number.isFinite(maxSalary)) {
+    where.salaryMin = {
+      lte: maxSalary,
+    };
+  }
 
-        values.push(filters.jobType);
-        parameterIndex++;
-    }
+  const requestedLimit = Number(filters.limit);
+  const requestedOffset = Number(filters.offset);
 
-    // Fixed: Ensure minSalary is a valid number before adding condition
-    if (filters.minSalary && !isNaN(filters.minSalary)) {
-        conditions.push(
-            `jobs.salary_max >= $${parameterIndex}`
-        );
+  const take =
+    Number.isInteger(requestedLimit) && requestedLimit > 0
+      ? Math.min(requestedLimit, 50)
+      : 10;
 
-        values.push(Number(filters.minSalary));
-        parameterIndex++;
-    }
+  const skip =
+    Number.isInteger(requestedOffset) && requestedOffset >= 0
+      ? requestedOffset
+      : 0;
 
-    // Fixed: Ensure maxSalary is a valid number before adding condition
-    if (filters.maxSalary && !isNaN(filters.maxSalary)) {
-        conditions.push(
-            `jobs.salary_min <= $${parameterIndex}`
-        );
-
-        values.push(Number(filters.maxSalary));
-        parameterIndex++;
-    }
-
-    if (filters.company) {
-        conditions.push(
-            `companies.name ILIKE $${parameterIndex}`
-        );
-
-        values.push(`%${filters.company}%`);
-        parameterIndex++;
-    }
-
-    if (conditions.length > 0) {
-        query += `
-            WHERE ${conditions.join(" AND ")}
-        `;
-    }
-
-    const limit = Math.min(
-        Number(filters.limit) || 10,
-        50
-    );
-
-    const offset =
-        Number(filters.offset) || 0;
-
-    query += `
-        ORDER BY jobs.created_at DESC
-        LIMIT $${parameterIndex}
-        OFFSET $${parameterIndex + 1}
-    `;
-
-    values.push(limit);
-    values.push(offset);
-
-    const result = await pool.query(
-        query,
-        values
-    );
-
-    return result.rows;
+  return prisma.job.findMany({
+    where,
+    include: jobInclude,
+    orderBy: {
+      createdAt: "desc",
+    },
+    take,
+    skip,
+  });
 };
 
 const getJobById = async (id) => {
-    const result = await pool.query('SELECT jobs.*, companies.name AS company_name FROM jobs JOIN companies ON jobs.company_id = companies.id WHERE jobs.id = $1',
-        [id]
-    );
-
-    return result.rows[0];
+  return prisma.job.findUnique({
+    where: {
+      id: Number(id),
+    },
+    include: jobInclude,
+  });
 };
 
-const updateJob = async (
-    id,
-    title,
-    description,
-    location,
-    salaryMin,
-    salaryMax,
-    jobType
-) => {
-    const result = await pool.query('UPDATE jobs SET title = $1, description = $2, location = $3, salary_min = $4, salary_max = $5, job_type = $6 WHERE id = $7 RETURNING *',
-        [
-            title,
-            description,
-            location,
-            salaryMin,
-            salaryMax,
-            jobType,
-            id
-        ]
-    );
+const getJobsByRecruiter = async (recruiterId) => {
+  return prisma.job.findMany({
+    where: {
+      company: {
+        recruiterId: Number(recruiterId),
+      },
+    },
+    include: jobInclude,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
 
-    return result.rows[0];
+const updateJob = async (id, data = {}) => {
+  const updateData = {};
+
+  if (data.title !== undefined) updateData.title = data.title;
+  if (data.description !== undefined) {
+    updateData.description = data.description;
+  }
+  if (data.requirements !== undefined) {
+    updateData.requirements = data.requirements || null;
+  }
+  if (data.location !== undefined) updateData.location = data.location;
+  if (data.salaryMin !== undefined) {
+    updateData.salaryMin = Number(data.salaryMin);
+  }
+  if (data.salaryMax !== undefined) {
+    updateData.salaryMax = Number(data.salaryMax);
+  }
+  if (data.jobType !== undefined) updateData.jobType = data.jobType;
+  if (data.status !== undefined) updateData.status = data.status;
+
+  return prisma.job.update({
+    where: {
+      id: Number(id),
+    },
+    data: updateData,
+    include: jobInclude,
+  });
 };
 
 const deleteJob = async (id) => {
-    const result = await pool.query('DELETE FROM jobs WHERE id = $1 RETURNING *',
-        [id]
-    );
-
-    return result.rows[0];
+  return prisma.job.delete({
+    where: {
+      id: Number(id),
+    },
+    include: jobInclude,
+  });
 };
 
 module.exports = {
-    createJob,
-    getAllJobs,
-    getJobById,
-    updateJob,
-    deleteJob
+  createJob,
+  getAllJobs,
+  getJobById,
+  getJobsByRecruiter,
+  updateJob,
+  deleteJob,
 };
