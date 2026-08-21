@@ -14,16 +14,20 @@ const profileRoutes = require("./routes/profileRoutes");
 
 const app = express();
 
+const stripTrailingSlash = (url) => (url ? url.replace(/\/+$/, "") : url);
+
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://career-connect-full-stack-web-appli.vercel.app/",
+  "https://career-connect-full-stack-web-appli.vercel.app",
   process.env.CLIENT_URL,
-].filter(Boolean);
+]
+  .filter(Boolean)
+  .map(stripTrailingSlash);
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(stripTrailingSlash(origin))) {
         return callback(null, true);
       }
 
